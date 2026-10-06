@@ -1,0 +1,151 @@
+# BEFORE: a typical build, scan and sign pipeline, written the way most repositories are, with upstream actions
+# referenced by tag. A tag is mutable: whoever controls the upstream repository decides what runs here
+# (in March 2026, 76 of 77 aquasecurity/trivy-action tags were repointed to a credential stealer).
+# pipeline-hardened.yml is generated from this file by scripts/migrate.sh; only the `uses:` lines differ.
+name: pipeline (upstream actions, tags)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["app/**", "Dockerfile", ".github/workflows/pipeline-*.yml"]
+
+permissions: {}
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}/hello
+  FLAVOR: upstream
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - id: changed
+        uses: tj-actions/changed-files@v47
+        with:
+          files: |
+            app/**
+            Dockerfile
+      - name: Show what changed
+        env:
+          ANY_CHANGED: ${{ steps.changed.outputs.any_changed }}
+          CHANGED_FILES: ${{ steps.changed.outputs.all_changed_files }}
+        run: |
+          echo "app changed: ${ANY_CHANGED}; files: ${CHANGED_FILES}"
+
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: app/go.mod
+          cache: false
+      - name: Unit tests
+        working-directory: app
+        run: go vet ./... && go test -v ./...
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.IMAGE }}
+          tags: type=sha,prefix=${{ env.FLAVOR }}-,format=long
+      - id: push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          build-args: BUILT_BY=${{ env.FLAVOR }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+      - name: SBOM (syft)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.IMAGE }}@${{ steps.push.outputs.digest }}
+          format: spdx-json
+          artifact-name: sbom-${{ env.FLAVOR }}.spdx.json
+      - name: Scan gate (grype)
+        uses: anchore/scan-action@v7
+        with:
+          image: ${{ env.IMAGE }}@${{ steps.push.outputs.digest }}
+          fail-build: true
+          severity-cutoff: high
+          only-fixed: true
+          output-format: table
+      - name: Second opinion (trivy)
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          image-ref: ${{ env.IMAGE }}@${{ steps.push.outputs.digest }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+      - name: Record the digest
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          mkdir -p out
+          printf '{"image":"%s","digest":"%s","flavor":"%s"}\n' "$IMAGE" "$DIGEST" "$FLAVOR" > out/build.json
+          cat out/build.json
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build-${{ env.FLAVOR }}
+          path: out/build.json
+
+  sign:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: sigstore/cosign-installer@v4.1.2
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Sign keyless and verify
+        env:
+          DIGEST: ${{ needs.build.outputs.digest }}
+        run: |
+          cosign sign --yes "${IMAGE}@${DIGEST}"
+          cosign verify "${IMAGE}@${DIGEST}" \
+            --certificate-identity "https://github.com/${GITHUB_WORKFLOW_REF}" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            | jq -r '.[0].optional | "verified: signed by \(.Subject) at commit \(.githubWorkflowSha)"'
+      - name: GitHub build provenance
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ needs.build.outputs.digest }}
+          push-to-registry: true

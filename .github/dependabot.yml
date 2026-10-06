@@ -1,0 +1,22 @@
+# A SHA pin without an updater strands you on one hardening: Chainguard re-hardens versions in place and moves
+# their tags, and only a tool that tracks the tag behind the pin brings those fixes in. Dependabot reads the
+# version comment after each SHA and opens one grouped pull request when a newer hardening or release exists;
+# the pipelines then run on that pull request before anything merges.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: actions
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: images

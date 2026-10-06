@@ -1,0 +1,53 @@
+# The checks that keep the migration honest, on every change to a workflow and every Monday:
+#   pins     every Chainguard Actions pin is a full SHA; whether its tag has moved (a newer hardening exists);
+#            every executed file matches the action's signed SLSA provenance
+#   zizmor   static analysis of the workflows themselves. Hardened actions do not fix *your* workflow:
+#            an injection in your own `run:` step is still yours. The hardened pipeline is a gate; the upstream
+#            pipeline is scanned for comparison and never fails this job.
+name: audit (pins, provenance, workflow analysis)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 1"
+  push:
+    branches: [main]
+    paths: [".github/**", "scripts/**"]
+
+permissions: {}
+
+jobs:
+  pins:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: chainguard-actions/actions-checkout@279383ec3b8d70f964ffa5a2151ea3d2a5317ec6 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Pins, tag drift and provenance file digests
+        run: |
+          scripts/verify-pins.sh .github/workflows/pipeline-hardened.yml .github/workflows/audit.yml 2>&1 \
+            | tee pins.txt
+          { echo '### Chainguard Actions pins'; echo '```'; cat pins.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+  zizmor:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: chainguard-actions/actions-checkout@279383ec3b8d70f964ffa5a2151ea3d2a5317ec6 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: zizmor, hardened pipeline and this workflow (gate)
+        uses: chainguard-actions/zizmorcore-zizmor-action@ae18637e0c1bd2274a397bc982ac3058769b347a # v0.6.4
+        with:
+          inputs: .github/workflows/pipeline-hardened.yml .github/workflows/audit.yml
+          advanced-security: false
+      - name: zizmor, upstream pipeline (comparison only)
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        uses: chainguard-actions/zizmorcore-zizmor-action@ae18637e0c1bd2274a397bc982ac3058769b347a # v0.6.4
+        with:
+          inputs: .github/workflows/pipeline-upstream.yml
+          advanced-security: false

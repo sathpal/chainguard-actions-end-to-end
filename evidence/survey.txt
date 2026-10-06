@@ -1,0 +1,15 @@
+UPSTREAM                         LATEST    HARDENED  RUNS       HOOK  PROV  TESTS  FINDINGS
+actions/checkout                 v7.0.1    v7.0.1    node24    no    yes   fail   0
+actions/setup-go                 v7.0.0    v7.0.0    node24     no    yes   pass   0
+actions/upload-artifact          v7.0.1    v7.0.1    node24     yes   yes   fail   0
+docker/setup-buildx-action       v4.4.1    v4.4.1    node24     no    yes   none   0
+docker/login-action              v4.6.0    v4.6.0    node24     no    yes   none   0
+docker/metadata-action           v6.2.0    v6.2.0    node24     yes   yes   none   1
+docker/build-push-action         v7.4.0    v7.4.0    node24     no    yes   none   0
+anchore/scan-action              v7.4.2    v7.4.2    node24     yes   yes   fail   0
+anchore/sbom-action              v0.24.3   v0.24.3   node24     yes   yes   fail   0
+sigstore/cosign-installer        v4.1.2    v4.1.2    composite  yes   yes   none   3
+tj-actions/changed-files         v47.0.6   v47.0.6   node24     yes   yes   fail   6
+actions/attest-build-provenance  v4.2.2    v4.2.2    composite  yes   yes   none   0
+aquasecurity/trivy-action        v0.36.0   v0.35.0   composite  yes   yes   none   4
+zizmorcore/zizmor-action         v0.6.4    v0.6.4    composite  yes   yes   none   1

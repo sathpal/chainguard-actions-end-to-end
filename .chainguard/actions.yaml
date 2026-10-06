@@ -1,0 +1,7 @@
+# Configuration for Chainguard's Guardener GitHub App. It does nothing until the app is installed on the
+# organization and linked with `chainctl guardener github link`; this repository migrated by script instead
+# (scripts/migrate.sh), so the app is optional here. With the app installed, `enabled` turns on comments on pull
+# requests that add unhardened actions, and `migrate.enabled` lets it open migration pull requests itself.
+enabled: true
+migrate:
+  enabled: false
