@@ -138,11 +138,12 @@ jobs:
         env:
           DIGEST: ${{ needs.build.outputs.digest }}
         run: |
+          identity="https://github.com/${GITHUB_WORKFLOW_REF}"
           cosign sign --yes "${IMAGE}@${DIGEST}"
           cosign verify "${IMAGE}@${DIGEST}" \
-            --certificate-identity "https://github.com/${GITHUB_WORKFLOW_REF}" \
+            --certificate-identity "${identity}" \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-            | jq -r '.[0].optional | "verified: signed by \(.Subject) at commit \(.githubWorkflowSha)"'
+            | jq -r --arg id "${identity}" '.[0].critical.image["docker-manifest-digest"] | "verified \(.) signed by \($id)"'
       - name: GitHub build provenance
         uses: chainguard-actions/actions-attest-build-provenance@8328d5e203fef634d47821ee4ace277c71134569 # v4.2.2
         with:

@@ -27,8 +27,10 @@ jobs:
           persist-credentials: false
       - name: Pins, tag drift and provenance file digests
         run: |
-          scripts/verify-pins.sh .github/workflows/pipeline-hardened.yml .github/workflows/audit.yml 2>&1 \
+          scripts/verify-pins.sh .github/workflows/pipeline-hardened.yml .github/workflows/audit.yml 2> details.txt \
             | tee pins.txt
+          echo "--- $(wc -l < details.txt) provenance entries not on the published branch or changed after signing (none executed):"
+          cat details.txt
           { echo '### Chainguard Actions pins'; echo '```'; cat pins.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
   zizmor:
