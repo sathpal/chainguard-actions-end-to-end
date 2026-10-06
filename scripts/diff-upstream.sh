@@ -14,5 +14,8 @@ git -C "$w/upstream" fetch -q --depth 1 "https://github.com/$up" "$commit"
 git -C "$w/upstream" checkout -q FETCH_HEAD
 echo "hardened $hr@$v ($(git -C "$w/hardened" rev-parse --short=12 HEAD)) built from $up@${commit:0:12}"
 cd "$w"
-diff -ru upstream hardened -x .git -x .github -x .gitignore -x HARDENING.md -x LICENSE_CHAINGUARD -x source.json \
-  -x attestations -x .actionchain -x tests -x test -x '*.md' -x LICENSE && echo "no difference in executed files"
+# Remove what is not executed from both trees first, so a plain `diff -r` works everywhere (BusyBox diff has no -x).
+find upstream hardened \( -name .git -o -name .github -o -name .gitignore -o -name HARDENING.md -o -name LICENSE_CHAINGUARD \
+  -o -name source.json -o -name attestations -o -name .actionchain -o -name tests -o -name test -o -name '*.md' \
+  -o -name LICENSE \) -prune -exec rm -rf {} +
+diff -r -U 3 upstream hardened && echo "no difference in executed files"
