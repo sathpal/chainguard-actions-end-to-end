@@ -86,11 +86,17 @@ scripts/diff-upstream.sh sigstore/cosign-installer v4.1.2
 
 # 5. Latest upstream release against the latest hardened one, hook, provenance, findings
 scripts/survey.sh actions/checkout docker/build-push-action
+
+# 6. Upstream actions still nested inside hardened ones, and the allowlist patterns they need
+scripts/nested.sh ci.hardened.yml
+
+# 7. Six PASS/FAIL checks for a migrated workflow, for your own CI
+scripts/acceptance.sh ci.hardened.yml
 ```
 
 Then add [`.github/dependabot.yml`](.github/dependabot.yml) for `github-actions`, run your pipeline on pull requests,
 and restrict allowed actions (Settings > Actions > General) to `chainguard-actions/*` plus the nested upstream SHAs from
-step 1.
+step 6.
 
 ## What is here
 
@@ -102,7 +108,7 @@ step 1.
 | [`.github/workflows/audit.yml`](.github/workflows/audit.yml) | Pins, tag drift, provenance digests, and zizmor, on every workflow change and weekly |
 | [`.github/dependabot.yml`](.github/dependabot.yml) | Weekly grouped updates for actions and base images |
 | [`.chainguard/actions.yaml`](.chainguard/actions.yaml) | Configuration for Chainguard's Guardener app; inert until the app is installed |
-| [`scripts/`](scripts) | `migrate.sh`, `regen-hardened.sh`, `verify-pins.sh`, `diff-upstream.sh`, `survey.sh` |
+| [`scripts/`](scripts) | `migrate.sh`, `regen-hardened.sh`, `verify-pins.sh`, `nested.sh`, `acceptance.sh`, `diff-upstream.sh`, `survey.sh` |
 | [`evidence/`](evidence) | Raw outputs behind every number in FINDINGS.md |
 
 ## Verify the images yourself

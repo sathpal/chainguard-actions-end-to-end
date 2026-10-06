@@ -153,9 +153,18 @@ rewriting is still rolling out. GitHub resolves every nested action when the job
 was refused even though that step was configured never to run. After adding those three, a fourth appeared one level
 deeper: `aquasecurity/setup-trivy` calls `actions/checkout@08c6903c…`.
 
-The pipeline passed with `chainguard-actions/*` plus exactly those four upstream commits, each by SHA. `chainctl
-actions discover . --recursive` lists them in advance ([`discover.txt`](evidence/discover.txt), 32 actions), and it works
-without a Chainguard login; only the catalog matching needs one.
+The pipeline passed with `chainguard-actions/*` plus exactly those four upstream commits, each by SHA. Two ways to find
+them before you switch the policy on: `chainctl actions discover . --recursive` ([`discover.txt`](evidence/discover.txt),
+32 actions; it works without a Chainguard login, only the catalog matching needs one), or
+[`scripts/nested.sh`](scripts/nested.sh), which walks the nested `action.yml` files and prints the patterns to paste:
+
+```text
+DEPTH  NESTED UPSTREAM ACTION                                                     VERSION   CALLED BY
+1      actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809                     v4.2.4    chainguard-actions/aquasecurity-trivy-action
+1      aquasecurity/setup-trivy@e6c2c5e321ed9123bda567646e2f96565e34abe1          v0.2.4    chainguard-actions/aquasecurity-trivy-action
+1      github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 v4.37.9   chainguard-actions/zizmorcore-zizmor-action
+2      actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8                  v5.0.0    aquasecurity/setup-trivy
+```
 
 **Do this:** build the allowlist from `discover --recursive`, add nested upstream actions by full SHA rather than by
 owner, and re-run discovery when Dependabot moves a pin.
