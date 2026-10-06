@@ -23,6 +23,7 @@ reports to Chainguard.
 | 9 | Hardened actions do not fix your own workflow: keep a workflow scanner | [`zizmor.txt`](evidence/zizmor.txt) |
 | 10 | 13 of 14 latest upstream releases were hardened on GA day; Trivy was one release behind | [`survey.txt`](evidence/survey.txt) |
 | 11 | No measurable run-time cost: 221 s against 228 s, averaged over three runs each | [`timings.txt`](evidence/timings.txt) |
+| 12 | The actions are source-available, not open source: internal CI/CD use is unrestricted, offering them to others is not | `LICENSE_CHAINGUARD` |
 
 ---
 
@@ -247,6 +248,21 @@ to ask, not a verdict.
 | zizmor high findings | 16 | 0 |
 
 The spread between runs of the same pipeline (up to 54 s) is wider than the gap between the two.
+
+## 12. Source-available, not open source
+
+Every hardened action carries `LICENSE_CHAINGUARD`, the *Chainguard Source Available License v1.0* (April 2026). It
+grants a royalty-free license and permits use "in Your own internal CI/CD pipelines, workflows, and development
+environments, without restriction", including by contractors "solely on Your behalf … within Your infrastructure". It
+forbids making the functionality available to third parties, redistributing modified copies, and using the actions to
+build a product that competes with Chainguard's, a category it defines broadly (anything that "scans, validates,
+monitors, builds, enforces, secures, verifies, manages, distributes, signs, attests, or hardens" artifacts or CI/CD
+components). Upstream licenses still cover the upstream code inside.
+
+So the repositories being public is not the same as being free to repackage. A consultancy or managed service provider
+can run them for a customer inside the customer's environment; a vendor cannot ship them inside its own product or
+marketplace. The open-beta announcement offered a 30-day free trial; what the paid entitlement adds beyond the
+license (the one-day request SLA, the Guardener app) is a question for Chainguard.
 
 ## Adoption checklist
 
