@@ -1,7 +1,10 @@
 # BEFORE: a typical build, scan and sign pipeline, written the way most repositories are, with upstream actions
 # referenced by tag. A tag is mutable: whoever controls the upstream repository decides what runs here
 # (in March 2026, 76 of 77 aquasecurity/trivy-action tags were repointed to a credential stealer).
-# pipeline-hardened.yml is generated from this file by scripts/migrate.sh; only the `uses:` lines differ.
+# pipeline-hardened.yml is generated from this file by scripts/regen-hardened.sh; only the `uses:` lines differ.
+#
+# On a pull request (Dependabot's action updates included) it builds and scans a local image and stops there:
+# nothing is pushed or signed until the change is on main.
 name: pipeline (upstream actions, tags)
 
 on:
@@ -9,12 +12,15 @@ on:
   push:
     branches: [main]
     paths: ["app/**", "Dockerfile", ".github/workflows/pipeline-*.yml"]
+  pull_request:
+    paths: ["app/**", "Dockerfile", ".github/workflows/pipeline-*.yml"]
 
 permissions: {}
 
 env:
   IMAGE: ghcr.io/${{ github.repository }}/hello
   FLAVOR: upstream
+  PUBLISH: ${{ github.event_name != 'pull_request' }}
 
 jobs:
   changes:
@@ -68,7 +74,8 @@ jobs:
         with:
           persist-credentials: false
       - uses: docker/setup-buildx-action@v4
-      - uses: docker/login-action@v4
+      - if: env.PUBLISH == 'true'
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -82,20 +89,28 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          push: true
+          push: ${{ env.PUBLISH == 'true' }}
+          load: ${{ env.PUBLISH != 'true' }}
           build-args: BUILT_BY=${{ env.FLAVOR }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+      - id: ref
+        name: Image to scan (pushed digest on main, local image on a pull request)
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+          LOCAL: ${{ steps.meta.outputs.tags }}
+        run: |
+          if [ "$PUBLISH" = true ]; then echo "ref=${IMAGE}@${DIGEST}" >> "$GITHUB_OUTPUT"; else echo "ref=${LOCAL}" >> "$GITHUB_OUTPUT"; fi
       - name: SBOM (syft)
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ env.IMAGE }}@${{ steps.push.outputs.digest }}
+          image: ${{ steps.ref.outputs.ref }}
           format: spdx-json
           artifact-name: sbom-${{ env.FLAVOR }}.spdx.json
       - name: Scan gate (grype)
         uses: anchore/scan-action@v7
         with:
-          image: ${{ env.IMAGE }}@${{ steps.push.outputs.digest }}
+          image: ${{ steps.ref.outputs.ref }}
           fail-build: true
           severity-cutoff: high
           only-fixed: true
@@ -103,16 +118,16 @@ jobs:
       - name: Second opinion (trivy)
         uses: aquasecurity/trivy-action@v0.35.0
         with:
-          image-ref: ${{ env.IMAGE }}@${{ steps.push.outputs.digest }}
+          image-ref: ${{ steps.ref.outputs.ref }}
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: "1"
-      - name: Record the digest
+      - name: Record what was built
         env:
-          DIGEST: ${{ steps.push.outputs.digest }}
+          REF: ${{ steps.ref.outputs.ref }}
         run: |
           mkdir -p out
-          printf '{"image":"%s","digest":"%s","flavor":"%s"}\n' "$IMAGE" "$DIGEST" "$FLAVOR" > out/build.json
+          printf '{"ref":"%s","flavor":"%s","published":%s}\n' "$REF" "$FLAVOR" "$PUBLISH" > out/build.json
           cat out/build.json
       - uses: actions/upload-artifact@v7
         with:
@@ -121,6 +136,7 @@ jobs:
 
   sign:
     needs: build
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
