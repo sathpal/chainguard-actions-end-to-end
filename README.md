@@ -8,7 +8,9 @@ scan with grype and Trivy, sign keyless with cosign, and publish GitHub build pr
 Chainguard image.
 
 Everything was run for real on 6 and 7 October 2026, the day Chainguard Actions became generally available.
-**[FINDINGS.md](FINDINGS.md)** has the twelve results with evidence. The headline:
+**Start here: [the hands-on guide](docs/hands-on.md)**, every command with its output and what it proves, in your
+terminal (25 minutes, no accounts) and then on your own GitHub repository. **[FINDINGS.md](FINDINGS.md)** has the twelve
+results with evidence, and [docs/devto-article.md](docs/devto-article.md) is the write-up. The headline:
 
 - **The migration is mechanical, not a rename.** 9 of the 12 major tags these actions publish (`@v7`, `@v4`) have no
   hardened equivalent; [`scripts/migrate.sh`](scripts/migrate.sh) resolves each to the exact hardened version in seconds.
