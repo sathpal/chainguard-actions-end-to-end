@@ -1,0 +1,7 @@
+# Commits by Chainguard's hardening bot on each version branch: every one moved the version tag
+actions-checkout@v6.0.3: 5 hardenings: 2026-06-12 2026-06-19 2026-07-23 2026-09-11 2026-09-19
+actions-checkout@v7.0.1: 3 hardenings: 2026-07-21 2026-09-11 2026-09-21
+sigstore-cosign-installer@v4.1.2: 5 hardenings: 2026-05-29 2026-05-29 2026-06-12 2026-08-19 2026-09-20
+tj-actions-changed-files@v47.0.6: 5 hardenings: 2026-06-04 2026-06-04 2026-06-11 2026-08-19 2026-09-20
+aquasecurity-trivy-action@v0.35.0: 129 hardenings (date:count): 2026-04-16:10 2026-04-17:24 2026-04-18:24 2026-04-19:24 2026-04-20:25 2026-04-21:17 2026-05-27:1 2026-06-04:1 2026-08-20:1 2026-09-19:1 2026-10-02:1 
+docker-build-push-action@v7.4.0: 1 hardenings: 2026-09-15

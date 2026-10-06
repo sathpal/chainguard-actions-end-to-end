@@ -1,0 +1,16 @@
+ACTION                                 PIN            VERSION    TAG                      FILES
+chainguard-actions/actions-attest-build-provenance 8328d5e203fe   v4.2.2     current                  14/14 match; upstream 4d101475d8b2
+chainguard-actions/actions-checkout    279383ec3b8d   v7.0.1     current                  100/100 match; upstream 3d3c42e5aac5
+chainguard-actions/actions-setup-go    738fd0174f4f   v7.0.0     current                  111/112 match (0 missing, 1 differ, none executed); upstream b7ad1dad31e0
+chainguard-actions/actions-upload-artifact dc8d35a3347d   v7.0.1     current                  64/64 match; upstream 043fb46d1a93
+chainguard-actions/anchore-sbom-action f26b93287efa   v0         current                  76/76 match; upstream e22c38990414
+chainguard-actions/anchore-scan-action 4db7c9be3731   v7.4.2     current                  59/59 match; upstream 27805bf3b4e8
+chainguard-actions/aquasecurity-trivy-action c02135b2a61e   v0.35.0    current                  42/42 match; upstream 57a97c7e7821
+chainguard-actions/docker-build-push-action 5b225cb1d6f5   v7.4.0     current                  81/81 match; upstream c3c9e263c25d
+chainguard-actions/docker-login-action 471f865b6525   v4.6.0     current                  47/47 match; upstream dbcb813823bd
+chainguard-actions/docker-metadata-action 897c7d20d500   v6.2.0     current                  100/109 match (8 missing, 1 differ, none executed); upstream dc8028041006
+chainguard-actions/docker-setup-buildx-action 9e5cde6a2bfe   v4.4.1     current                  47/47 match; upstream f87e5991a6d7
+chainguard-actions/sigstore-cosign-installer b87981cc3b02   v4.1.2     current                  9/11 match (1 missing, 1 differ, none executed); upstream 6f9f17788090
+chainguard-actions/tj-actions-changed-files 4b4bd2ed96c7   v47        current                  66/77 match (10 missing, 1 differ, none executed); upstream 24d32ffd4924
+chainguard-actions/zizmorcore-zizmor-action ae18637e0c1b   v0.6.4     current                  23/23 match; upstream cc914d7f3750
+exit 0

@@ -1,0 +1,9 @@
+PIPELINE   RUN          WALL_S   CHANGES TEST   BUILD  SIGN   EVENT
+upstream   37510147638  227      7      32     162    21     push
+hardened   37510147374  200      6      16     159    16     push
+upstream   37511008061  223      4      25     173    17     push
+hardened   37511007989  254      8      28     180    37     push
+upstream   37511255095  212      7      35     146    19     push
+hardened   37511255132  229      8      25     171    24     push
+upstream   37511660147  163      6      27     130    skip   pull_request
+hardened   37511660116  201      8      33     164    skip   pull_request

@@ -1,0 +1,14 @@
+# zizmor v1 (zizmor-action v0.6.4, persona regular), audit run 37510147115
+hardened pipeline + audit.yml: No findings to report. Good job! (10 suppressed)
+upstream pipeline:             23 findings (7 suppressed, 16 unsafe fixes): 0 informational, 0 low, 0 medium, 16 high
+
+upstream findings by audit:
+   16 error[unpinned-uses]
+
+first upstream finding in full:
+error[unpinned-uses]: unpinned action reference
+  --> .github/workflows/pipeline-upstream.yml:25:15
+   |
+25 |       - uses: actions/checkout@v7
+   |               ^^^^^^^^^^^^^^^^^^^ action is not pinned to a hash (required by blanket policy)
+   |

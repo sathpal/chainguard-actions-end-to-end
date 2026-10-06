@@ -1,0 +1,20 @@
+# Repository setting: Actions > General > Allow select actions. github_owned_allowed=false, verified_allowed=false.
+
+## Attempt 1: patterns_allowed = chainguard-actions/*
+upstream pipeline (run 37512270392): startup_failure (refused before any job started)
+  run 37512264591 ##[error]The actions aquasecurity/setup-trivy@e6c2c5e321ed9123bda567646e2f96565e34abe1 and actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 are not allowed in sathpal/chainguard-actions-end-to-end because all actions must be from a repository owned by sathpal or match the pattern: chainguard-actions/*.
+  run 37512275737 ##[error]The action github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 is not allowed in sathpal/chainguard-actions-end-to-end because all actions must be from a repository owned by sathpal or match the pattern: chainguard-actions/*.
+
+## Attempt 2: + the three nested upstream actions above, each pinned by SHA
+  run 37512450711 ##[error]The action actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 is not allowed in sathpal/chainguard-actions-end-to-end because all actions must be from a repository owned by sathpal or match one of the patterns: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809, aquasecurity/setup-trivy@e6c2c5e321ed9123bda567646e2f96565e34abe1, chainguard-actions/*, github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938.
+  (actions/checkout@08c6903 is called by aquasecurity/setup-trivy, two levels below the hardened trivy-action)
+
+## Attempt 3 (current): + actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+hardened pipeline (run 37512719340): success
+
+## Allowed patterns now
+  chainguard-actions/*
+  aquasecurity/setup-trivy@e6c2c5e321ed9123bda567646e2f96565e34abe1
+  actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
+  github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938
+  actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8

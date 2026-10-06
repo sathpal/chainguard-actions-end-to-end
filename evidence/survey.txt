@@ -1,5 +1,5 @@
 UPSTREAM                         LATEST    HARDENED  RUNS       HOOK  PROV  TESTS  FINDINGS
-actions/checkout                 v7.0.1    v7.0.1    node24    no    yes   fail   0
+actions/checkout                 v7.0.1    v7.0.1    node24     no    yes   fail   0
 actions/setup-go                 v7.0.0    v7.0.0    node24     no    yes   pass   0
 actions/upload-artifact          v7.0.1    v7.0.1    node24     yes   yes   fail   0
 docker/setup-buildx-action       v4.4.1    v4.4.1    node24     no    yes   none   0

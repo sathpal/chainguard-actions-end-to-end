@@ -1,0 +1,10 @@
+# HARDENING.md findings by where the fixed file lives (latest hardened version of each action with findings)
+# runtime = the action definition or a script it runs; repo CI/examples = the action's own workflows or example files,
+# which never run in a consumer's pipeline (and are not shipped on the version branch)
+ACTION                               FINDINGS RUNTIME  REPO CI/EXAMPLES FINDING IDS
+tj-actions-changed-files@v47.0.6     6        0        6                script-injection
+sigstore-cosign-installer@v4.1.2     3        2        1                github-env-injection, script-injection
+aquasecurity-trivy-action@v0.35.0    4        1        3                github-env-injection, permissions, script-injection, unpinned-uses
+docker-metadata-action@v6.2.0        1        0        1                script-injection
+zizmorcore-zizmor-action@v0.6.4      1        1        0                script-injection
+TOTAL                                15       4        11

@@ -1,0 +1,26 @@
+# What hardening changed in the files that execute, per action, 6-7 Oct 2026.
+# Produced with scripts/diff-upstream.sh <owner/repo> <version>: the hardened version branch against the exact upstream
+# commit named in its source.json, leaving out Chainguard's metadata, docs, tests and the action's own CI workflows.
+
+ACTION                           VERSION   WHAT CHANGED IN EXECUTED FILES
+docker/build-push-action         v7.4.0    nothing
+docker/setup-buildx-action       v4.4.1    nothing
+actions/checkout                 v7.0.1    nothing (chainguard-phonehome.js is added but nothing calls it)
+docker/login-action              v4.6.0    nothing (chainguard-phonehome.js is added but nothing calls it)
+actions/setup-go                 v7.0.0    nothing (package.json rewritten with different line endings; identical text)
+actions/upload-artifact          v7.0.1    usage hook only (`pre: chainguard-phonehome.js` on both entry points)
+docker/metadata-action           v6.2.0    usage hook only
+anchore/scan-action              v7.4.2    usage hook only (also on the download-grype sub-action)
+anchore/sbom-action              v0.24.3   usage hook only (also on the download-syft and publish-sbom sub-actions)
+tj-actions/changed-files         v47.0.6   usage hook only
+actions/attest-build-provenance  v4.2.2    usage hook step; nested actions/attest rewritten to chainguard-actions/actions-attest
+                                           (same version, v4.2.1); input descriptions reflowed onto one line
+sigstore/cosign-installer        v4.1.2    usage hook step; install-dir sanitized before it is written to $GITHUB_PATH
+                                           (Linux/macOS and Windows); `case` operands quoted
+aquasecurity/trivy-action        v0.35.0   usage hook step; $GITHUB_ACTION_PATH sanitized before $GITHUB_PATH;
+                                           trivyignores split into a quoted array in entrypoint.sh
+zizmorcore/zizmor-action         v0.6.4    usage hook step; user-supplied `inputs` tokenized with xargs into an array
+                                           instead of an unquoted expansion in `docker run`
+
+Summary: 5 of 14 run upstream's code unchanged, 5 add only the usage hook, 1 rewrites a nested reference to its
+hardened copy, and 3 carry security fixes to code that runs.
