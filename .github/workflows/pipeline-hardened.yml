@@ -106,7 +106,7 @@ jobs:
           format: spdx-json
           artifact-name: sbom-${{ env.FLAVOR }}.spdx.json
       - name: Scan gate (grype)
-        uses: chainguard-actions/anchore-scan-action@6fd51fc1c2c6421ef0c9bbc53c990b14c931148a # v7.4.0
+        uses: chainguard-actions/anchore-scan-action@4db7c9be373180645131c7341407f57d94ee1c05 # v7.4.2
         with:
           image: ${{ steps.ref.outputs.ref }}
           fail-build: true
