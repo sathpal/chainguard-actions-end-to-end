@@ -1,6 +1,6 @@
 # Build on Chainguard's Go image, run on Chainguard's static image: no shell, no package manager, non-root.
 # Both bases are pinned by digest; Dependabot proposes new digests (see .github/dependabot.yml).
-FROM cgr.dev/chainguard/go:latest@sha256:86536f93eb6f89f55d3b6970c5957b332c40da7496d4296ca74c9767250b9a54 AS build
+FROM cgr.dev/chainguard/go:latest@sha256:9777674c18af3042ab4952fa5d8e70ebcc73f243748e4e2585c18ae69bcecd35 AS build
 ARG BUILT_BY=dev
 WORKDIR /src
 COPY app/ .
