@@ -134,7 +134,9 @@ DEPTH  NESTED UPSTREAM ACTION                                              CALLE
 
 With `chainguard-actions/*` plus those four, the hardened pipeline went green and the old one stayed blocked.
 
-Five days later the list was down to three: Chainguard re-hardened `zizmor-action` on 7 October, and the only change in code that runs was that nested `upload-sarif` reference, now pointing at its hardened copy. Regenerate the list; don't maintain it by hand.
+Five days later the list was down to three: Chainguard re-hardened `zizmor-action` on 7 October, and the only change in code that runs was that nested `upload-sarif` reference, now pointing at its hardened copy. Regenerate the list; don't maintain it by hand. This is the repository's setting as it stands:
+
+![GitHub repository settings, Actions permissions: only sathpal and selected actions; GitHub-created and verified-creator actions off; chainguard-actions/* plus three nested SHAs](https://raw.githubusercontent.com/sathpal/chainguard-actions-end-to-end/main/docs/images/web-allowlist-settings.png)
 
 ![nested.sh on 11 October: three nested upstream actions and the allowlist patterns to paste](https://raw.githubusercontent.com/sathpal/chainguard-actions-end-to-end/main/docs/images/nested.png)
 
@@ -178,6 +180,7 @@ Signed in to Chainguard, `chainctl actions discover` also matches every action a
 - `git ls-remote --tags` gives you every tag and commit without touching the GitHub API.
 - Hardened repos are named `<owner>-<repo>`: `tj-actions/changed-files` lives at `chainguard-actions/tj-actions-changed-files`.
 - Keep the version comment after every SHA; Dependabot and humans both need it.
+- GitHub's allowlist box now also takes a `!` prefix to block an action, and the same page has a "Require actions to be pinned to a full-length commit SHA" switch. Both complement the allowlist; I didn't run with them on.
 - `chainctl actions discover --recursive` works without a Chainguard login; signed in, it also names the Chainguard equivalent of each action.
 - Chainguard's Guardener GitHub app can comment on PRs that add unhardened actions and open migration PRs for you.
 

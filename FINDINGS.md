@@ -173,6 +173,8 @@ DEPTH  NESTED UPSTREAM ACTION                                                   
 2      actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8                  v5.0.0    aquasecurity/setup-trivy
 ```
 
+![The allowlist in the repository settings on 11 October](docs/images/web-allowlist-settings.png)
+
 **Do this:** build the allowlist from `discover --recursive`, add nested upstream actions by full SHA rather than by
 owner, and re-run discovery when Dependabot moves a pin.
 

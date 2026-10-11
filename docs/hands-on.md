@@ -452,7 +452,9 @@ gh api -X PUT repos/$R/actions/permissions/selected-actions -F github_owned_allo
 gh workflow run pipeline-hardened.yml -R $R
 ```
 
-The hardened pipeline goes green; the upstream one stays blocked.
+The hardened pipeline goes green; the upstream one stays blocked. In the repository settings it looks like this:
+
+![Actions permissions: GitHub-created and verified-creator actions off, chainguard-actions/* plus three nested SHAs](images/web-allowlist-settings.png)
 
 ![Second round: actions/checkout@08c6903, called by setup-trivy, is not allowed](images/annot-checkout-not-allowed.png)
 
