@@ -429,17 +429,15 @@ The actions aquasecurity/setup-trivy@e6c2c5e3… and actions/cache@0400d5f6… a
 because all actions must be from a repository owned by <you> or match the pattern: chainguard-actions/*.
 ```
 
-GitHub checks every nested action when a job is set up, even one in a step that will never run (the audit workflow
-fails the same way on `github/codeql-action/upload-sarif`, inside the zizmor action, in a step switched off). Add exactly
-what A8 printed, plus the zizmor one, each by SHA:
+GitHub checks every nested action when a job is set up, even one in a step that will never run. Add exactly what A8
+printed, each by SHA:
 
 ```bash
 gh api -X PUT repos/$R/actions/permissions/selected-actions -F github_owned_allowed=false -F verified_allowed=false \
   -f 'patterns_allowed[]=chainguard-actions/*' \
   -f 'patterns_allowed[]=aquasecurity/setup-trivy@e6c2c5e321ed9123bda567646e2f96565e34abe1' \
   -f 'patterns_allowed[]=actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809' \
-  -f 'patterns_allowed[]=actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' \
-  -f 'patterns_allowed[]=github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938'
+  -f 'patterns_allowed[]=actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8'
 gh workflow run pipeline-hardened.yml -R $R
 ```
 
@@ -447,7 +445,9 @@ The hardened pipeline goes green; the upstream one stays blocked.
 
 **Observation.** On the original repository this took two rounds: after adding the first three, a fourth appeared one
 level deeper (`setup-trivy` calls `actions/checkout@08c6903…`). Run `nested.sh` or `chainctl actions discover
---recursive` before you switch the policy on, and again whenever Dependabot moves a pin.
+--recursive` before you switch the policy on, and again whenever Dependabot moves a pin. On GA day there was a fifth
+pattern, `github/codeql-action/upload-sarif@cdf488f5…`, inside the zizmor action in a step switched off; the 7 October
+re-hardening of `zizmor-action` swapped it for its hardened copy, so with today's pins it is gone.
 
 ### B5. Clean up
 

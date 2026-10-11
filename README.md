@@ -7,7 +7,8 @@ hardened drop-in replacements pinned by commit SHA. Only the `uses:` lines diffe
 scan with grype and Trivy, sign keyless with cosign, and publish GitHub build provenance for a small Go service on a
 Chainguard image.
 
-Everything was run for real on 6 and 7 October 2026, the day Chainguard Actions became generally available.
+Everything was run for real on 6 and 7 October 2026, the day Chainguard Actions became generally available, and again on
+11 October (see [five days later](FINDINGS.md#five-days-later-two-gates-went-red-both-for-good-reasons)).
 **Start here: [the hands-on guide](docs/hands-on.md)**, every command with its output and what it proves, in your
 terminal (25 minutes, no accounts) and then on your own GitHub repository. **[FINDINGS.md](FINDINGS.md)** has the twelve
 results with evidence, and [docs/devto-article.md](docs/devto-article.md) is the write-up. The headline:
@@ -18,7 +19,7 @@ results with evidence, and [docs/devto-article.md](docs/devto-article.md) is the
   carry real fixes, but all 14 are immutable, reviewed copies of the exact upstream commit. The attacks on
   `tj-actions/changed-files` (2025) and `aquasecurity/trivy-action` (March 2026) moved tags; a SHA-pinned hardened
   copy is immune to both.
-- **Three things need a decision:** nested upstream actions an allowlist must name (4 here), binaries actions download
+- **Three things need a decision:** nested upstream actions an allowlist must name (4 on GA day, 3 now), binaries actions download
   while they run, and a usage hook that reports to Chainguard.
 - **No measurable cost:** 221 s against 228 s per run, both images with 0 findings, zizmor high findings 16 to 0.
 
@@ -41,7 +42,7 @@ flowchart LR
         DB["Dependabot<br/>new hardening → PR"]
         PR["Pipeline runs on the PR<br/>(build + scan, no push)"]
         A["audit.yml: verify-pins.sh<br/>(SHA, tag drift, provenance digests)<br/>+ zizmor gate"]
-        AL["Repo allowlist<br/>chainguard-actions/* + 4 nested SHAs"]
+        AL["Repo allowlist<br/>chainguard-actions/* + 3 nested SHAs"]
     end
     U --> D --> M --> H --> P
     DB --> PR --> H
@@ -59,7 +60,7 @@ flowchart LR
 | Run time, mean of three runs on `main` | 221 s | 228 s |
 | Image scan, grype and Trivy | 0 findings | 0 findings |
 | Signed keyless, verified | yes | yes |
-| Repository allowlist on | refused before start | passes with 4 nested upstream SHAs allowed |
+| Repository allowlist on | refused before start | passes with 3 nested upstream SHAs allowed (4 on GA day) |
 | Tag hijack of an upstream action | runs whatever the tag points to | not affected: the SHA names a Chainguard-built copy |
 
 Runs: [upstream](https://github.com/sathpal/chainguard-actions-end-to-end/actions/runs/37510147638) ·

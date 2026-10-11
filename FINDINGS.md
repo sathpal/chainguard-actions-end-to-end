@@ -17,7 +17,7 @@ reports to Chainguard.
 | 3 | 5 of 14 actions run upstream's code unchanged; 3 carry security fixes to code that runs | [`runtime-diffs.txt`](evidence/runtime-diffs.txt) |
 | 4 | 11 of 15 `HARDENING.md` findings are in files that never run in your pipeline | [`hardening-findings.txt`](evidence/hardening-findings.txt) |
 | 5 | Provenance matches every executed file (839 of 862 entries overall); the signature cannot be verified yet | [`verify-pins.txt`](evidence/verify-pins.txt) |
-| 6 | An allowlist of `chainguard-actions/*` alone broke the hardened pipeline; it needed 4 nested upstream SHAs | [`allowlist.txt`](evidence/allowlist.txt) |
+| 6 | An allowlist of `chainguard-actions/*` alone broke the hardened pipeline; it needed 4 nested upstream SHAs (3 after a re-hardening on 7 October) | [`allowlist.txt`](evidence/allowlist.txt) |
 | 7 | Hardening does not cover what an action downloads while it runs | [hardened run log](https://github.com/sathpal/chainguard-actions-end-to-end/actions/runs/37510147374) |
 | 8 | 9 of 14 hardened actions report usage to Chainguard; with `id-token: write` the report is OIDC-verified | [`survey.txt`](evidence/survey.txt) |
 | 9 | Hardened actions do not fix your own workflow: keep a workflow scanner | [`zizmor.txt`](evidence/zizmor.txt) |
@@ -170,6 +170,12 @@ DEPTH  NESTED UPSTREAM ACTION                                                   
 **Do this:** build the allowlist from `discover --recursive`, add nested upstream actions by full SHA rather than by
 owner, and re-run discovery when Dependabot moves a pin.
 
+**Update, 11 October.** Chainguard re-hardened `zizmor-action` v0.6.4 on 7 October, and the only change in code that
+runs is that nested reference: `github/codeql-action/upload-sarif@cdf488f5…` became
+`chainguard-actions/github-codeql-action/upload-sarif@7428a50d…`. After moving the pin, the codeql pattern came out of
+the allowlist and the audit still passed ([run 38149896153](https://github.com/sathpal/chainguard-actions-end-to-end/actions/runs/38149896153)).
+The nested list shrinks as the rewriting rolls out, which is one more reason to regenerate it rather than keep it by hand.
+
 ## 7. Hardening does not cover what an action downloads while it runs
 
 The hardened Trivy action's log, two seconds into the step:
@@ -263,6 +269,24 @@ So the repositories being public is not the same as being free to repackage. A c
 can run them for a customer inside the customer's environment; a vendor cannot ship them inside its own product or
 marketplace. The open-beta announcement offered a 30-day free trial; what the paid entitlement adds beyond the
 license (the one-day request SLA, the Guardener app) is a question for Chainguard.
+
+## Five days later: two gates went red, both for good reasons
+
+On 11 October both workflows were run again, untouched since GA day. Both failed, and both failures were the controls
+working:
+
+- **The audit gate failed on a moved tag.** `zizmor-action` v0.6.4 had been re-hardened (above), and the zizmor binary
+  the action pulls by tag at run time was now v1.30.1, which reports a SHA whose version tag has moved as
+  `ref-version-mismatch` ([run 38149331131](https://github.com/sathpal/chainguard-actions-end-to-end/actions/runs/38149331131)).
+  `scripts/verify-pins.sh` showed the same thing as `moved -> 893477715937`. Dependabot runs weekly and had not
+  proposed it yet; the pin was bumped by hand. Findings 2 and 7 in one failure.
+- **The scan gate failed on the Go toolchain, not on an action.** The binary had been built with go1.27.1, and Go
+  1.27.2 fixed one critical and five high standard-library advisories in the meantime
+  ([run 38149327915](https://github.com/sathpal/chainguard-actions-end-to-end/actions/runs/38149327915)). Chainguard's
+  `go:latest` already shipped 1.27.2; moving the builder digest made it green
+  ([run 38149648202](https://github.com/sathpal/chainguard-actions-end-to-end/actions/runs/38149648202)).
+
+Every executed file of every pin still matched its provenance, and no other tag had moved.
 
 ## Adoption checklist
 

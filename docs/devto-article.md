@@ -18,7 +18,7 @@ Everything below came from runs you can open and repeat:
 - **Swapping the org name is not enough.** 9 of the 12 major tags these actions publish (`@v7`, `@v4`) do not exist in the catalog. A script resolved each to the exact hardened version in 21 seconds.
 - **Most of the protection comes from where the code lives, not new code.** 5 of my 14 actions run upstream's code unchanged, 5 only add a usage hook, and 3 carry real security fixes. All 14 are immutable copies of a known commit, which is what the Trivy and tj-actions attacks needed you not to have.
 - **Hardened tags move.** One version of `actions/checkout` has been re-hardened five times since June. Pin the SHA, and let Dependabot move it (it does, correctly).
-- **An allowlist of `chainguard-actions/*` broke my hardened pipeline**, twice. Hardened actions still call four upstream actions inside.
+- **An allowlist of `chainguard-actions/*` broke my hardened pipeline**, twice. Hardened actions still called four upstream actions inside on GA day, three five days later.
 - **It does not cover** what actions download at run time, your own workflow code, or a usage hook that reports to Chainguard. Know these before your security team asks.
 - **It cost nothing measurable:** 228 seconds against 221, which is within run-to-run noise.
 
@@ -149,6 +149,8 @@ DEPTH  NESTED UPSTREAM ACTION                                              CALLE
 
 With `chainguard-actions/*` plus those four, the hardened pipeline went green and the old one stayed blocked.
 
+Five days later the list was down to three: Chainguard re-hardened `zizmor-action` on 7 October, and the only change in code that runs was that nested `upload-sarif` reference, now pointing at its hardened copy. Regenerate the list; don't maintain it by hand.
+
 ## Results
 
 | | Upstream actions, tags | Chainguard Actions, SHAs |
@@ -157,7 +159,7 @@ With `chainguard-actions/*` plus those four, the hardened pipeline went green an
 | grype and Trivy findings in the image | 0 | 0 |
 | Signed keyless and verified | yes | yes |
 | zizmor findings (high) | 16 `unpinned-uses` | 0 |
-| Under a `chainguard-actions/*` allowlist | refused before start | passes with 4 nested SHAs allowed |
+| Under a `chainguard-actions/*` allowlist | refused before start | passes with 4 nested SHAs allowed (3 by 11 October) |
 
 ## Caveats nobody puts on the slide
 
@@ -198,10 +200,19 @@ With `chainguard-actions/*` plus those four, the hardened pipeline went green an
 6. Pin the versions of tools your actions download.
 7. Keep a workflow scanner and a pin check in CI.
 
+## Five days later, two gates went red
+
+I ran both workflows again on 11 October without changing anything. Both failed, and both failures were the controls doing their job:
+
+- **The audit gate caught a moved tag.** `zizmor-action` v0.6.4 had been re-hardened, and the zizmor binary the action pulls by tag at run time was now a newer release that reports a pin whose version tag has moved (`ref-version-mismatch`). Dependabot runs weekly and hadn't got to it yet. The pin bump was one line.
+- **The scan gate caught the Go toolchain, not an action.** Go 1.27.2 had fixed one critical and five high standard-library advisories since my image was built on 1.27.1. Chainguard's `go` image already shipped 1.27.2, so moving the builder digest made it green.
+
+Every executed file of every pin still matched its provenance. That is what "Dependabot plus a gate on pull requests" buys you: drift shows up as a red check with a reason, not as a surprise.
+
 ## Try it yourself
 
 The repository has a [step-by-step hands-on guide](https://github.com/sathpal/chainguard-actions-end-to-end/blob/main/docs/hands-on.md): Part A runs in any terminal with `git`, `curl` and `jq` in about 25 minutes; Part B runs both pipelines on your own GitHub repository and walks you through the allowlist breaking and being fixed. All twelve findings, with the raw evidence behind each number, are in [FINDINGS.md](https://github.com/sathpal/chainguard-actions-end-to-end/blob/main/FINDINGS.md).
 
 The short version of what I learned: Chainguard Actions turns every action in a pipeline into a reviewed, signed copy of a known commit that nobody else can move, kept current by pull requests your own CI tests. Pin the SHAs, allowlist the nested actions, and pin the tools they download.
 
-*All numbers are from runs on 6 and 7 October 2026. Chainguard re-hardens continuously, so yours will differ; the pattern won't.*
+*All numbers are from runs on 6, 7 and 11 October 2026. Chainguard re-hardens continuously, so yours will differ; the pattern won't.*

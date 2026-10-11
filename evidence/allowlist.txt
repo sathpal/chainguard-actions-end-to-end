@@ -12,9 +12,21 @@ upstream pipeline (run 37512270392): startup_failure (refused before any job sta
 ## Attempt 3 (current): + actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 hardened pipeline (run 37512719340): success
 
-## Allowed patterns now
+## Allowed patterns on 2026-10-06
   chainguard-actions/*
   aquasecurity/setup-trivy@e6c2c5e321ed9123bda567646e2f96565e34abe1
   actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
   github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938
+  actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+
+## Update, 2026-10-11: zizmor-action v0.6.4 re-hardened on 2026-10-07
+The new hardening (89347771593754e40420fa7d7b00a412f6e50ccf) calls the hardened
+chainguard-actions/github-codeql-action/upload-sarif@7428a50deafe6f01e94419b5a73518c7a3874ac2 instead of the upstream
+github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938, so chainguard-actions/* now covers it.
+Pin bumped in audit.yml; the codeql pattern removed from the allowlist; audit (run 38149896153): success
+
+## Allowed patterns now
+  chainguard-actions/*
+  aquasecurity/setup-trivy@e6c2c5e321ed9123bda567646e2f96565e34abe1
+  actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
   actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
