@@ -9,6 +9,8 @@ On 19 March 2026, someone force-pushed 76 of the 77 version tags of `aquasecurit
 
 Chainguard's answer, [Chainguard Actions](https://edu.chainguard.dev/chainguard/actions/overview/), became generally available on 6 October 2026: more than 1,000 GitHub Actions, copied from the exact upstream commit of each version, reviewed by a rule set and an AI pass, fixed where needed, signed, and re-hardened whenever the rules improve. I spent GA day moving a real pipeline onto it and writing down everything I saw, including the parts that broke.
 
+![Chainguard blog: Chainguard Actions is Generally Available, 6 October 2026](https://raw.githubusercontent.com/sathpal/chainguard-actions-end-to-end/main/docs/images/web-ga-post.png)
+
 Everything below came from runs you can open and repeat:
 
 {% github sathpal/chainguard-actions-end-to-end %}
@@ -42,12 +44,9 @@ git clone -q --depth 1 -b v4.1.2 https://github.com/chainguard-actions/sigstore-
 grep -E 'finding\(s\)|^### [a-z-]+ ' ci-412/HARDENING.md
 ```
 
-```text
-Action **sigstore--cosign-installer/v4.1.2** was hardened automatically. 3 finding(s) were identified and resolved across 2 iteration(s).
-### github-env-injection (severity: high)
-### github-env-injection (severity: high)
-### script-injection (severity: high)
-```
+![HARDENING.md for cosign-installer v4.1.2: 3 findings resolved, two github-env-injection and one script-injection, all high](https://raw.githubusercontent.com/sathpal/chainguard-actions-end-to-end/main/docs/images/hardening-findings.png)
+
+![The v4.1.2 branch of chainguard-actions/sigstore-cosign-installer: attestations, HARDENING.md, LICENSE_CHAINGUARD, source.json next to the action](https://raw.githubusercontent.com/sathpal/chainguard-actions-end-to-end/main/docs/images/web-hardened-repo.png)
 
 Next to it: `source.json`, naming the upstream commit and the rule set applied, and `attestations/provenance.intoto.jsonl`, a signed SLSA v1 statement with a SHA-256 digest for each of the action's 11 files.
 
@@ -55,16 +54,8 @@ Next to it: `source.json`, naming the upstream commit and the rule set applied, 
 
 The question I wanted answered before anything else: what actually changed in the code that runs? A small script clones the hardened version and the exact upstream commit, strips docs, tests and CI, and diffs the rest.
 
-```text
-hardened chainguard-actions/docker-build-push-action@v7.4.0 built from docker/build-push-action@c3c9e263c25d
-no difference in executed files
-```
+![diff-upstream.sh: build-push-action has no difference in executed files; cosign-installer strips newlines before writing to GITHUB_PATH](https://raw.githubusercontent.com/sathpal/chainguard-actions-end-to-end/main/docs/images/diff-upstream.png)
 
-```diff
--      run: envsubst <<<"${input_install_dir}" >> "$GITHUB_PATH"
-+        safe_install_dir=$(printf '%s' "$(envsubst <<< "${input_install_dir}")" | tr -d '\n\r')
-+        printf '%s\n' "${safe_install_dir}" >> "$GITHUB_PATH"
-```
 
 The first is typical: build-push-action runs upstream's code byte for byte. The second is a real fix in cosign-installer: a newline in a value written to `$GITHUB_PATH` could put an attacker's directory on the `PATH` of every later step.
 
@@ -84,7 +75,9 @@ NO-MATCH aquasecurity/trivy-action@v0.36.0: no hardened tag for that version; pi
 ...
 ```
 
-Two things surprised me. Most hardened repositories have no major tags, so `@v7` has to become the exact version `@v7` points to upstream; the script uses only `git ls-remote`, so it needs no token and hits no API rate limit. And one action did not migrate: Dependabot had already moved my "before" pipeline to Trivy v0.36.0, and the catalog only has v0.35.0 (the one tag the March attacker missed). I pinned the newest hardened version by hand; the catalog has a request form for new versions.
+Two things surprised me. Most hardened repositories have no major tags, so `@v7` has to become the exact version `@v7` points to upstream; the script uses only `git ls-remote`, so it needs no token and hits no API rate limit. And one action did not migrate: Dependabot had already moved my "before" pipeline to Trivy v0.36.0, and the catalog only has v0.35.0 (the one tag the March attacker missed). I pinned the newest hardened version by hand; the catalog has a request form for new versions. By 11 October the catalog had caught up, and the same command pins every action:
+
+![migrate.sh re-run on 11 October: every action resolves to a hardened SHA, Trivy v0.36.0 included](https://raw.githubusercontent.com/sathpal/chainguard-actions-end-to-end/main/docs/images/migrate.png)
 
 The result is 16 lines like this one:
 
@@ -101,41 +94,33 @@ git clone -q --filter=blob:none --no-checkout --single-branch -b v6.0.3 https://
 git -C co log --format='%cs %h %s' --grep='^Update actions/checkout@v6.0.3$'
 ```
 
-```text
-2026-09-19 bf4cd70 Update actions/checkout@v6.0.3
-2026-09-11 a5784d3 Update actions/checkout@v6.0.3
-2026-07-23 0582da5 Update actions/checkout@v6.0.3
-2026-06-19 13fd614 Update actions/checkout@v6.0.3
-2026-06-12 a520786 Update actions/checkout@v6.0.3
-```
+![git log of the hardened actions-checkout v6.0.3 branch: five re-hardenings between June and September 2026](https://raw.githubusercontent.com/sathpal/chainguard-actions-end-to-end/main/docs/images/tag-history.png)
 
 That is deliberate, and it is how fixes reach tag users. But only a SHA says exactly what runs, and a SHA nobody updates leaves you on an old hardening. Dependabot handles SHA pins with a version comment: three minutes after my first push it opened a pull request moving `anchore-scan-action` from the 7.4.0 hardening to 7.4.2. Both pipelines ran on the pull request (build and scan a local image, push and sign nothing), passed, and I merged it. That loop is the operating model.
 
+![Dependabot PR #1: anchore-scan-action moves from the v7.4.0 hardening to v7.4.2 by SHA, with the version comment updated](https://raw.githubusercontent.com/sathpal/chainguard-actions-end-to-end/main/docs/images/web-dependabot-diff.png)
+
 ## Step 5: Check every pin against its provenance
 
-Chainguard does not publish a verification procedure yet, so I wrote a small one: for each pin, confirm it is a full SHA, check whether its tag still points there, and hash every file against the digests in the signed provenance. Output trimmed to fit:
+Chainguard does not publish a verification procedure yet, so I wrote a small one: for each pin, confirm it is a full SHA, check whether its tag still points there, and hash every file against the digests in the signed provenance. Re-run on 11 October, every tag was still current:
 
-```text
-ACTION                                       PIN           VERSION  TAG      FILES
-chainguard-actions/actions-checkout          279383ec3b8d  v7.0.1   current  100/100 match
-chainguard-actions/docker-build-push-action  5b225cb1d6f5  v7.4.0   current  81/81 match
-chainguard-actions/tj-actions-changed-files  4b4bd2ed96c7  v47      current  66/77 match (10 missing, 1 differ, none executed)
-...
-```
+![verify-pins.sh: 13 hardened actions, every pin current, every executed file matching its provenance](https://raw.githubusercontent.com/sathpal/chainguard-actions-end-to-end/main/docs/images/verify-pins.png)
 
 **Every executed file in all 13 actions matched.** The exceptions were files that never run: the action's own CI workflows, listed in the provenance but not shipped on the branch, and READMEs that gained a privacy notice after signing. Worth reporting, harmless in practice. What I could *not* check is the signature itself: the key behind the provenance is not published yet.
 
 ## Step 6: The allowlist that broke twice
 
-The documented hardening step is to restrict your organization to approved actions and add `chainguard-actions/*`. I did. The "before" pipeline was refused before it started, which is the point. Then the hardened one failed at *Set up job*:
+The documented hardening step is to restrict your organization to approved actions and add `chainguard-actions/*`. I did. The "before" pipeline was refused before it started, which is the point:
 
-```text
-The actions aquasecurity/setup-trivy@e6c2c5e3… and actions/cache@0400d5f6… are not allowed in
-sathpal/chainguard-actions-end-to-end because all actions must be from a repository owned by sathpal
-or match the pattern: chainguard-actions/*.
-```
+![GitHub annotation: the upstream actions on tags are not allowed](https://raw.githubusercontent.com/sathpal/chainguard-actions-end-to-end/main/docs/images/annot-upstream-refused.png)
+
+Then the hardened one failed at *Set up job*:
+
+![GitHub annotation: aquasecurity/setup-trivy and actions/cache, nested inside the hardened trivy action, are not allowed](https://raw.githubusercontent.com/sathpal/chainguard-actions-end-to-end/main/docs/images/annot-nested-not-allowed.png)
 
 Some hardened composite actions still call upstream actions inside, pinned by SHA but not swapped for hardened copies (Chainguard only swaps when a hardened copy of that exact commit exists, and that rewriting is still rolling out). GitHub checks every nested action when the job starts, even one in a step configured never to run. I added those, and it failed again: `setup-trivy` itself calls `actions/checkout@08c6903…`, one level further down.
+
+![GitHub annotation on the second attempt: actions/checkout@08c6903, two levels down, is not allowed](https://raw.githubusercontent.com/sathpal/chainguard-actions-end-to-end/main/docs/images/annot-checkout-not-allowed.png)
 
 The fix is to allow exactly those commits, by SHA, and to find them *before* you flip the switch. `chainctl actions discover . --recursive` does it (no Chainguard login needed), or a small script that walks the nested `action.yml` files (columns trimmed):
 
@@ -150,6 +135,12 @@ DEPTH  NESTED UPSTREAM ACTION                                              CALLE
 With `chainguard-actions/*` plus those four, the hardened pipeline went green and the old one stayed blocked.
 
 Five days later the list was down to three: Chainguard re-hardened `zizmor-action` on 7 October, and the only change in code that runs was that nested `upload-sarif` reference, now pointing at its hardened copy. Regenerate the list; don't maintain it by hand.
+
+![nested.sh on 11 October: three nested upstream actions and the allowlist patterns to paste](https://raw.githubusercontent.com/sathpal/chainguard-actions-end-to-end/main/docs/images/nested.png)
+
+Signed in to Chainguard, `chainctl actions discover` also matches every action against the catalog: of the 32 actions it found here, 16 are already Chainguard and 16 have a Chainguard equivalent, 7 of them at a matching version. It also shows that `aquasecurity/setup-trivy`, one of the nested upstream actions, now has a hardened copy of its own, so the next re-hardening of the Trivy action may drop another line from the allowlist.
+
+![chainctl actions discover with a Chainguard login: each upstream action next to its Chainguard equivalent](https://raw.githubusercontent.com/sathpal/chainguard-actions-end-to-end/main/docs/images/discover.png)
 
 ## Results
 
@@ -167,7 +158,7 @@ Five days later the list was down to three: Chainguard re-hardened `zizmor-actio
 - **There is a usage hook.** 9 of my 14 actions report each use to `actions.enforce.dev` (repository and action). It times out after two seconds and can't fail a build. If the job grants `id-token: write`, it also mints an OIDC token for Chainguard's audience, so the record is verified and carries ref, commit and workflow. Your signing job has that permission. Allow the host in your egress rules, and grant `id-token: write` only where needed.
 - **Your own workflows are still yours.** Hardened actions fix injection *inside the action*. An untrusted `${{ github.event... }}` value in your own `run:` step is untouched. Keep a workflow scanner such as [zizmor](https://docs.zizmor.sh/) in CI.
 - **The provenance signature can't be verified yet.** File digests can.
-- **The catalog can lag.** On GA day, 13 of my 14 latest releases were there; Trivy was one behind.
+- **The catalog can lag.** On GA day, 13 of my 14 latest releases were there; Trivy was one behind. Five days later it had caught up.
 - **Chainguard's own test flag.** Each version carries a `test-result.json`; 5 of mine said `passed: false`. All 14 worked. Ask, don't panic.
 - **It's source-available, not open source.** Use in your own internal CI/CD is royalty-free and unrestricted; offering the functionality to third parties or building a competing product is not allowed. Read `LICENSE_CHAINGUARD` before you build a service around it.
 
@@ -187,7 +178,7 @@ Five days later the list was down to three: Chainguard re-hardened `zizmor-actio
 - `git ls-remote --tags` gives you every tag and commit without touching the GitHub API.
 - Hardened repos are named `<owner>-<repo>`: `tj-actions/changed-files` lives at `chainguard-actions/tj-actions-changed-files`.
 - Keep the version comment after every SHA; Dependabot and humans both need it.
-- `chainctl actions discover --recursive` works without a Chainguard login.
+- `chainctl actions discover --recursive` works without a Chainguard login; signed in, it also names the Chainguard equivalent of each action.
 - Chainguard's Guardener GitHub app can comment on PRs that add unhardened actions and open migration PRs for you.
 
 ## If you adopt it
@@ -205,7 +196,11 @@ Five days later the list was down to three: Chainguard re-hardened `zizmor-actio
 I ran both workflows again on 11 October without changing anything. Both failed, and both failures were the controls doing their job:
 
 - **The audit gate caught a moved tag.** `zizmor-action` v0.6.4 had been re-hardened, and the zizmor binary the action pulls by tag at run time was now a newer release that reports a pin whose version tag has moved (`ref-version-mismatch`). Dependabot runs weekly and hadn't got to it yet. The pin bump was one line.
+
+![CI log: zizmor ref-version-mismatch, the v0.6.4 branch now points to commit 893477715937](https://raw.githubusercontent.com/sathpal/chainguard-actions-end-to-end/main/docs/images/log-moved-tag.png)
 - **The scan gate caught the Go toolchain, not an action.** Go 1.27.2 had fixed one critical and five high standard-library advisories since my image was built on 1.27.1. Chainguard's `go` image already shipped 1.27.2, so moving the builder digest made it green.
+
+![CI log: grype finds Go 1.27.1 standard-library advisories, one critical and five high, fixed in 1.27.2](https://raw.githubusercontent.com/sathpal/chainguard-actions-end-to-end/main/docs/images/log-scan-gate.png)
 
 Every executed file of every pin still matched its provenance. That is what "Dependabot plus a gate on pull requests" buys you: drift shows up as a red check with a reason, not as a surprise.
 

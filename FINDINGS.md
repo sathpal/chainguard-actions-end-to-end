@@ -148,11 +148,17 @@ The actions aquasecurity/setup-trivy@e6c2c5e3… and actions/cache@0400d5f6… a
 The action github/codeql-action/upload-sarif@cdf488f5… is not allowed …
 ```
 
+![Annotation, run 37512264591: setup-trivy and actions/cache not allowed](docs/images/annot-nested-not-allowed.png)
+
+![Annotation, run 37512275737: codeql upload-sarif not allowed](docs/images/annot-codeql-not-allowed.png)
+
 Hardened composite actions still call some upstream actions inside, pinned by SHA but not replaced with hardened
 copies: Chainguard rewrites a nested reference only when a hardened copy of that exact commit exists, and the
 rewriting is still rolling out. GitHub resolves every nested action when the job is set up, so zizmor's SARIF upload
 was refused even though that step was configured never to run. After adding those three, a fourth appeared one level
 deeper: `aquasecurity/setup-trivy` calls `actions/checkout@08c6903c…`.
+
+![Annotation, run 37512450711: actions/checkout@08c6903 not allowed](docs/images/annot-checkout-not-allowed.png)
 
 The pipeline passed with `chainguard-actions/*` plus exactly those four upstream commits, each by SHA. Two ways to find
 them before you switch the policy on: `chainctl actions discover . --recursive` ([`discover.txt`](evidence/discover.txt),
@@ -280,13 +286,20 @@ working:
   `ref-version-mismatch` ([run 38149331131](https://github.com/sathpal/chainguard-actions-end-to-end/actions/runs/38149331131)).
   `scripts/verify-pins.sh` showed the same thing as `moved -> 893477715937`. Dependabot runs weekly and had not
   proposed it yet; the pin was bumped by hand. Findings 2 and 7 in one failure.
+
+  ![zizmor ref-version-mismatch in the audit log](docs/images/log-moved-tag.png)
 - **The scan gate failed on the Go toolchain, not on an action.** The binary had been built with go1.27.1, and Go
   1.27.2 fixed one critical and five high standard-library advisories in the meantime
   ([run 38149327915](https://github.com/sathpal/chainguard-actions-end-to-end/actions/runs/38149327915)). Chainguard's
   `go:latest` already shipped 1.27.2; moving the builder digest made it green
   ([run 38149648202](https://github.com/sathpal/chainguard-actions-end-to-end/actions/runs/38149648202)).
 
-Every executed file of every pin still matched its provenance, and no other tag had moved.
+  ![grype gate: Go 1.27.1 standard-library advisories](docs/images/log-scan-gate.png)
+
+  ![The pipeline green again after the two bumps](docs/images/web-green-after-fix.png)
+
+Every executed file of every pin still matched its provenance, and no other tag had moved. The catalog had also caught
+up on Finding 10: `migrate.sh` now pins Trivy `v0.36.0` to a hardened copy.
 
 ## Adoption checklist
 

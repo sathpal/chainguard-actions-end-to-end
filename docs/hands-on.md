@@ -79,6 +79,8 @@ from. If upstream's tag moved tomorrow, the hardened copy would not follow.
 
 Each hardened repository has a `main` branch with metadata only and one branch per version holding the action.
 
+![The v4.1.2 branch of chainguard-actions/sigstore-cosign-installer on GitHub](images/web-hardened-repo.png)
+
 ```bash
 cd ..
 git clone -q --depth 1 https://github.com/chainguard-actions/sigstore-cosign-installer ci-main
@@ -174,7 +176,8 @@ the hardened copy of that version by SHA, with the version as a comment.
 
 **Observation.** One action did not migrate. Dependabot had moved this pipeline to Trivy `v0.36.0`, released after the
 attack, and the catalog only has `v0.35.0`. That is a decision, not a bug: stay on the newest hardened version, or
-[request the new one](https://github.com/chainguard-actions/.github/issues/new?template=new-action.yml). Pin the
+[request the new one](https://github.com/chainguard-actions/.github/issues/new?template=new-action.yml).
+(Update, 11 October: the catalog now has a hardened `v0.36.0`, and `migrate.sh` pins it without help.) Pin the
 hardened `v0.35.0` (on macOS use `sed -i ''`):
 
 ```bash
@@ -332,6 +335,8 @@ Pushing starts three workflows: `pipeline (upstream actions, tags)`, `pipeline (
 push it to your GHCR, generate an SBOM, scan with grype and Trivy, sign it keyless with cosign and attach GitHub build
 provenance. On the original repository both finished green on the first run.
 
+![GitHub Actions run list of the original repository](images/web-actions-runs.png)
+
 **Observation.** In the hardened run, open the `build` job. Some steps have a *Pre* step:
 
 ```text
@@ -405,6 +410,10 @@ actions: bump the actions group with 2 updates
 
 Both pipelines run on the pull request: they build and scan a local image, and push and sign only on `main`.
 
+![Dependabot pull request #1, merged](images/web-dependabot-pr.png)
+
+![The diff of pull request #1: a new hardening of anchore-scan-action by SHA, and Trivy v0.36.0 in the upstream pipeline](images/web-dependabot-diff.png)
+
 **Observation.** Dependabot understands SHA pins with a version comment, which is why the comment matters.
 
 **Caveat.** Without a `pull_request` trigger, Dependabot's changes merge untested. The pipelines here run on pull
@@ -429,6 +438,8 @@ The actions aquasecurity/setup-trivy@e6c2c5e3… and actions/cache@0400d5f6… a
 because all actions must be from a repository owned by <you> or match the pattern: chainguard-actions/*.
 ```
 
+![The same error as a GitHub annotation on the original repository](images/annot-nested-not-allowed.png)
+
 GitHub checks every nested action when a job is set up, even one in a step that will never run. Add exactly what A8
 printed, each by SHA:
 
@@ -442,6 +453,8 @@ gh workflow run pipeline-hardened.yml -R $R
 ```
 
 The hardened pipeline goes green; the upstream one stays blocked.
+
+![Second round: actions/checkout@08c6903, called by setup-trivy, is not allowed](images/annot-checkout-not-allowed.png)
 
 **Observation.** On the original repository this took two rounds: after adding the first three, a fourth appeared one
 level deeper (`setup-trivy` calls `actions/checkout@08c6903…`). Run `nested.sh` or `chainctl actions discover
