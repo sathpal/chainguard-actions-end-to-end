@@ -114,7 +114,7 @@ jobs:
           only-fixed: true
           output-format: table
       - name: Second opinion (trivy)
-        uses: chainguard-actions/aquasecurity-trivy-action@c02135b2a61e8a6d603c53db55145af34b25ce4d # v0.35.0
+        uses: chainguard-actions/aquasecurity-trivy-action@9a44fb9c8bbe099dac4d53c3df9d1a255f14867a # v0.36.0
         with:
           image-ref: ${{ steps.ref.outputs.ref }}
           severity: HIGH,CRITICAL
@@ -127,7 +127,7 @@ jobs:
           mkdir -p out
           printf '{"ref":"%s","flavor":"%s","published":%s}\n' "$REF" "$FLAVOR" "$PUBLISH" > out/build.json
           cat out/build.json
-      - uses: chainguard-actions/actions-upload-artifact@dc8d35a3347d79eda9033e7af73f508094dd41b5 # v7.0.1
+      - uses: chainguard-actions/actions-upload-artifact@ebf8f2543b7189e9a67dcac1af8cabbc5d7a3fd6 # v7.0.2
         with:
           name: build-${{ env.FLAVOR }}
           path: out/build.json
