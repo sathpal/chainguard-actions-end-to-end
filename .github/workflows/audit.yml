@@ -42,14 +42,14 @@ jobs:
         with:
           persist-credentials: false
       - name: zizmor, hardened pipeline and this workflow (gate)
-        uses: chainguard-actions/zizmorcore-zizmor-action@89347771593754e40420fa7d7b00a412f6e50ccf # v0.6.4
+        uses: chainguard-actions/zizmorcore-zizmor-action@56f331d1ef9e81ba77b5f4f8e57f75d12d9c0f11 # v0.7.1
         with:
           inputs: .github/workflows/pipeline-hardened.yml .github/workflows/audit.yml
           advanced-security: false
       - name: zizmor, upstream pipeline (comparison only)
         if: ${{ !cancelled() }}
         continue-on-error: true
-        uses: chainguard-actions/zizmorcore-zizmor-action@89347771593754e40420fa7d7b00a412f6e50ccf # v0.6.4
+        uses: chainguard-actions/zizmorcore-zizmor-action@56f331d1ef9e81ba77b5f4f8e57f75d12d9c0f11 # v0.7.1
         with:
           inputs: .github/workflows/pipeline-upstream.yml
           advanced-security: false
