@@ -22,7 +22,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: chainguard-actions/actions-checkout@279383ec3b8d70f964ffa5a2151ea3d2a5317ec6 # v7.0.1
+      - uses: chainguard-actions/actions-checkout@37298d8de412b35988dd165ffae45f45b329d365 # v7.0.1
         with:
           persist-credentials: false
       - name: Pins, tag drift and provenance file digests
@@ -38,18 +38,18 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: chainguard-actions/actions-checkout@279383ec3b8d70f964ffa5a2151ea3d2a5317ec6 # v7.0.1
+      - uses: chainguard-actions/actions-checkout@37298d8de412b35988dd165ffae45f45b329d365 # v7.0.1
         with:
           persist-credentials: false
       - name: zizmor, hardened pipeline and this workflow (gate)
-        uses: chainguard-actions/zizmorcore-zizmor-action@89347771593754e40420fa7d7b00a412f6e50ccf # v0.6.4
+        uses: chainguard-actions/zizmorcore-zizmor-action@3a12cd280911e8ccbe6ad890ffe9c109220a1295 # v0.8.0
         with:
           inputs: .github/workflows/pipeline-hardened.yml .github/workflows/audit.yml
           advanced-security: false
       - name: zizmor, upstream pipeline (comparison only)
         if: ${{ !cancelled() }}
         continue-on-error: true
-        uses: chainguard-actions/zizmorcore-zizmor-action@89347771593754e40420fa7d7b00a412f6e50ccf # v0.6.4
+        uses: chainguard-actions/zizmorcore-zizmor-action@3a12cd280911e8ccbe6ad890ffe9c109220a1295 # v0.8.0
         with:
           inputs: .github/workflows/pipeline-upstream.yml
           advanced-security: false

@@ -26,7 +26,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: chainguard-actions/actions-checkout@279383ec3b8d70f964ffa5a2151ea3d2a5317ec6 # v7.0.1
+      - uses: chainguard-actions/actions-checkout@37298d8de412b35988dd165ffae45f45b329d365 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
@@ -48,7 +48,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: chainguard-actions/actions-checkout@279383ec3b8d70f964ffa5a2151ea3d2a5317ec6 # v7.0.1
+      - uses: chainguard-actions/actions-checkout@37298d8de412b35988dd165ffae45f45b329d365 # v7.0.1
         with:
           persist-credentials: false
       - uses: chainguard-actions/actions-setup-go@738fd0174f4ff963ac8c2e9dfe83e3191b2777fb # v7.0.0
@@ -68,12 +68,12 @@ jobs:
     outputs:
       digest: ${{ steps.push.outputs.digest }}
     steps:
-      - uses: chainguard-actions/actions-checkout@279383ec3b8d70f964ffa5a2151ea3d2a5317ec6 # v7.0.1
+      - uses: chainguard-actions/actions-checkout@37298d8de412b35988dd165ffae45f45b329d365 # v7.0.1
         with:
           persist-credentials: false
       - uses: chainguard-actions/docker-setup-buildx-action@9e5cde6a2bfeda6fa52c81f71365a9271a46fce0 # v4.4.1
       - if: env.PUBLISH == 'true'
-        uses: chainguard-actions/docker-login-action@471f865b6525577aec1a207ce43d4ec3ed8a996d # v4.6.0
+        uses: chainguard-actions/docker-login-action@9ca95e6f2e9bd0c4126723351940f7635d932456 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -114,7 +114,7 @@ jobs:
           only-fixed: true
           output-format: table
       - name: Second opinion (trivy)
-        uses: chainguard-actions/aquasecurity-trivy-action@c02135b2a61e8a6d603c53db55145af34b25ce4d # v0.35.0
+        uses: chainguard-actions/aquasecurity-trivy-action@9a44fb9c8bbe099dac4d53c3df9d1a255f14867a # v0.36.0
         with:
           image-ref: ${{ steps.ref.outputs.ref }}
           severity: HIGH,CRITICAL
@@ -127,7 +127,7 @@ jobs:
           mkdir -p out
           printf '{"ref":"%s","flavor":"%s","published":%s}\n' "$REF" "$FLAVOR" "$PUBLISH" > out/build.json
           cat out/build.json
-      - uses: chainguard-actions/actions-upload-artifact@dc8d35a3347d79eda9033e7af73f508094dd41b5 # v7.0.1
+      - uses: chainguard-actions/actions-upload-artifact@ebf8f2543b7189e9a67dcac1af8cabbc5d7a3fd6 # v7.0.2
         with:
           name: build-${{ env.FLAVOR }}
           path: out/build.json
@@ -143,7 +143,7 @@ jobs:
       attestations: write
     steps:
       - uses: chainguard-actions/sigstore-cosign-installer@b87981cc3b0232e11827d1a8c6bcfa63d6cbd97a # v4.1.2
-      - uses: chainguard-actions/docker-login-action@471f865b6525577aec1a207ce43d4ec3ed8a996d # v4.6.0
+      - uses: chainguard-actions/docker-login-action@9ca95e6f2e9bd0c4126723351940f7635d932456 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
