@@ -26,12 +26,12 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: chainguard-actions/actions-checkout@279383ec3b8d70f964ffa5a2151ea3d2a5317ec6 # v7.0.1
+      - uses: chainguard-actions/actions-checkout@37298d8de412b35988dd165ffae45f45b329d365 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
       - id: changed
-        uses: chainguard-actions/tj-actions-changed-files@4b4bd2ed96c7629e1c911f97f2390b91e1362735 # v47
+        uses: chainguard-actions/tj-actions-changed-files@42a2b04baae2d5e39d2429299f622b7f01f8420d # v47
         with:
           files: |
             app/**
@@ -48,10 +48,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: chainguard-actions/actions-checkout@279383ec3b8d70f964ffa5a2151ea3d2a5317ec6 # v7.0.1
+      - uses: chainguard-actions/actions-checkout@37298d8de412b35988dd165ffae45f45b329d365 # v7.0.1
         with:
           persist-credentials: false
-      - uses: chainguard-actions/actions-setup-go@738fd0174f4ff963ac8c2e9dfe83e3191b2777fb # v7.0.0
+      - uses: chainguard-actions/actions-setup-go@a23f604fa6ac04bc887d814b1cf828c9fbaf51a7 # v7.0.0
         with:
           go-version-file: app/go.mod
           cache: false
@@ -68,23 +68,23 @@ jobs:
     outputs:
       digest: ${{ steps.push.outputs.digest }}
     steps:
-      - uses: chainguard-actions/actions-checkout@279383ec3b8d70f964ffa5a2151ea3d2a5317ec6 # v7.0.1
+      - uses: chainguard-actions/actions-checkout@37298d8de412b35988dd165ffae45f45b329d365 # v7.0.1
         with:
           persist-credentials: false
-      - uses: chainguard-actions/docker-setup-buildx-action@9e5cde6a2bfeda6fa52c81f71365a9271a46fce0 # v4.4.1
+      - uses: chainguard-actions/docker-setup-buildx-action@9744db81e7643f97efc7d98e7ce3d11d197f3093 # v4.4.1
       - if: env.PUBLISH == 'true'
-        uses: chainguard-actions/docker-login-action@471f865b6525577aec1a207ce43d4ec3ed8a996d # v4.6.0
+        uses: chainguard-actions/docker-login-action@e866ef65062739486ea6d830a9cd5957df29abea # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - id: meta
-        uses: chainguard-actions/docker-metadata-action@897c7d20d500ba5c444ff537bcce1278724b6c96 # v6.2.0
+        uses: chainguard-actions/docker-metadata-action@f00cce7d85a292451bbab8346cddfdfb3a7b0ea4 # v6.2.0
         with:
           images: ${{ env.IMAGE }}
           tags: type=sha,prefix=${{ env.FLAVOR }}-,format=long
       - id: push
-        uses: chainguard-actions/docker-build-push-action@5b225cb1d6f5196bc2459eaa52642b902bf3750f # v7.4.0
+        uses: chainguard-actions/docker-build-push-action@7a9792a1d0d1c43df643ef18b1f3a4a495833b23 # v7.4.0
         with:
           context: .
           push: ${{ env.PUBLISH == 'true' }}
@@ -106,7 +106,7 @@ jobs:
           format: spdx-json
           artifact-name: sbom-${{ env.FLAVOR }}.spdx.json
       - name: Scan gate (grype)
-        uses: chainguard-actions/anchore-scan-action@4db7c9be373180645131c7341407f57d94ee1c05 # v7.4.2
+        uses: chainguard-actions/anchore-scan-action@c0ec3af557c5684f75ff122d1560e8de876c57ae # v7.4.2
         with:
           image: ${{ steps.ref.outputs.ref }}
           fail-build: true
@@ -114,7 +114,7 @@ jobs:
           only-fixed: true
           output-format: table
       - name: Second opinion (trivy)
-        uses: chainguard-actions/aquasecurity-trivy-action@c02135b2a61e8a6d603c53db55145af34b25ce4d # v0.35.0
+        uses: chainguard-actions/aquasecurity-trivy-action@48605fdca0f5553f0ddedf3301fce2681397ff3d # v0.35.0
         with:
           image-ref: ${{ steps.ref.outputs.ref }}
           severity: HIGH,CRITICAL
@@ -127,7 +127,7 @@ jobs:
           mkdir -p out
           printf '{"ref":"%s","flavor":"%s","published":%s}\n' "$REF" "$FLAVOR" "$PUBLISH" > out/build.json
           cat out/build.json
-      - uses: chainguard-actions/actions-upload-artifact@dc8d35a3347d79eda9033e7af73f508094dd41b5 # v7.0.1
+      - uses: chainguard-actions/actions-upload-artifact@c91615377dcc230c6b156542d25044f9b8d80dd8 # v7.0.1
         with:
           name: build-${{ env.FLAVOR }}
           path: out/build.json
@@ -142,8 +142,8 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: chainguard-actions/sigstore-cosign-installer@b87981cc3b0232e11827d1a8c6bcfa63d6cbd97a # v4.1.2
-      - uses: chainguard-actions/docker-login-action@471f865b6525577aec1a207ce43d4ec3ed8a996d # v4.6.0
+      - uses: chainguard-actions/sigstore-cosign-installer@634c2f027906fc3f2a3bb29ca604080e1b2eab86 # v4.1.3
+      - uses: chainguard-actions/docker-login-action@e866ef65062739486ea6d830a9cd5957df29abea # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -159,7 +159,7 @@ jobs:
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             | jq -r --arg id "${identity}" '.[0].critical.image["docker-manifest-digest"] | "verified \(.) signed by \($id)"'
       - name: GitHub build provenance
-        uses: chainguard-actions/actions-attest-build-provenance@8328d5e203fef634d47821ee4ace277c71134569 # v4.2.2
+        uses: chainguard-actions/actions-attest-build-provenance@e525ec1a4156b85024a67fd8acc21021e8a3c9b6 # v4.2.2
         with:
           subject-name: ${{ env.IMAGE }}
           subject-digest: ${{ needs.build.outputs.digest }}
